@@ -148,11 +148,17 @@ class example_application:
         if ((self.arm.name() == 'PSM1') or (self.arm.name() == 'PSM2')
             or (self.arm.name() == 'PSM3') or (self.arm.name() == 'ECM')):
             # set in position joint mode
-            goal[0] = 0.0
-            goal[1] = 0.0
-            goal[2] = 0.12
-            goal[3] = 0.0
-            self.arm.move_jp(goal).wait()
+            
+            initial_joint_position = numpy.copy(self.arm.setpoint_jp())
+            
+            
+            # goal[0] = 0.0
+            # goal[1] = 0.0
+            # goal[2] = 0.12
+            # goal[3] = 0.0
+            
+            self.arm.move_jp(initial_joint_position).wait()
+            # self.arm.move_jp(goal).wait()
 
     # direct cartesian control example
     def run_servo_cp(self):
@@ -167,17 +173,22 @@ class example_application:
         goal.p = self.arm.setpoint_cp().p
         goal.M = self.arm.setpoint_cp().M
         # motion parameters
-        amplitude = 0.02 # 4 cm total
+        amplitude = 0.03 # 4 cm total
         duration = 5  # 5 seconds
         samples = duration / self.expected_interval
         start = rospy.Time.now()
         for i in range(int(samples)):
-            goal.p[0] =  initial_cartesian_position.p[0] + amplitude *  (1.0 - math.cos(i * math.radians(360.0) / samples))
-            goal.p[1] =  initial_cartesian_position.p[1] + amplitude *  (1.0 - math.cos(i * math.radians(360.0) / samples))
+            # goal.p[0] =  initial_cartesian_position.p[0] + 0.01 *  (1.0 - math.cos(i * math.radians(360.0) / samples))
+            # goal.p[1] =  initial_cartesian_position.p[1] + amplitude *  (1.0 - math.cos(i * math.radians(360.0) / samples))
+            # goal.p[1] =  initial_cartesian_position.p[1] - 0.01 *  (1.0 - math.cos(i * math.radians(360.0) / samples))
+            goal.p[2] =  initial_cartesian_position.p[2] - 0.01 *  (1.0 - math.cos(i * math.radians(360.0) / samples))
+            
+
+
             self.arm.servo_cp(goal)
             # check error on kinematics, compare to desired on arm.
             # to test tracking error we would compare to
-            # current_position
+            # current_position-
             setpoint_cp = self.arm.setpoint_cp()
             errorX = goal.p[0] - setpoint_cp.p[0]
             errorY = goal.p[1] - setpoint_cp.p[1]
@@ -205,40 +216,55 @@ class example_application:
         # motion parameters
         amplitude = 0.05 # 5 cm
 
-        # first motion
-        goal.p[0] =  initial_cartesian_position.p[0] - amplitude
-        goal.p[1] =  initial_cartesian_position.p[1]
+        # x first motion
+        goal.p[0] =  initial_cartesian_position.p[0] - 0.04
+        goal.p[1] =  initial_cartesian_position.p[1] - 0.04
         self.arm.move_cp(goal).wait()
-        # second motion
-        goal.p[0] =  initial_cartesian_position.p[0] + amplitude
-        goal.p[1] =  initial_cartesian_position.p[1]
+        # x second motion
+        goal.p[0] =  initial_cartesian_position.p[0] + 0.04
+        goal.p[1] =  initial_cartesian_position.p[1] + 0.04
         self.arm.move_cp(goal).wait()
-        # back to initial position
+        # x back to initial position
         goal.p[0] =  initial_cartesian_position.p[0]
         goal.p[1] =  initial_cartesian_position.p[1]
         self.arm.move_cp(goal).wait()
-        # first motion
-        goal.p[0] =  initial_cartesian_position.p[0]
-        goal.p[1] =  initial_cartesian_position.p[1] - amplitude
+        # y first motion
+        goal.p[0] =  initial_cartesian_position.p[0] + 0.005
+        goal.p[1] =  initial_cartesian_position.p[1] - 0.005
         self.arm.move_cp(goal).wait()
-        # second motion
-        goal.p[0] =  initial_cartesian_position.p[0]
-        goal.p[1] =  initial_cartesian_position.p[1] + amplitude
+        # y second motion
+        goal.p[0] =  initial_cartesian_position.p[0] - 0.005
+        goal.p[1] =  initial_cartesian_position.p[1] + 0.005
         self.arm.move_cp(goal).wait()
-        # back to initial position
+        # y back to initial position
         goal.p[0] =  initial_cartesian_position.p[0]
         goal.p[1] =  initial_cartesian_position.p[1]
+        self.arm.move_cp(goal).wait()
+        # z first motion
+        goal.p[0] =  initial_cartesian_position.p[0]
+        goal.p[1] =  initial_cartesian_position.p[1] 
+        goal.p[2] =  initial_cartesian_position.p[2] - 0.01
+        self.arm.move_cp(goal).wait()
+        # z second motion
+        goal.p[0] =  initial_cartesian_position.p[0]
+        goal.p[1] =  initial_cartesian_position.p[1] 
+        goal.p[2] =  initial_cartesian_position.p[2] + 0.01
+        self.arm.move_cp(goal).wait()
+        # z back to initial position
+        goal.p[0] =  initial_cartesian_position.p[0]
+        goal.p[1] =  initial_cartesian_position.p[1]
+        goal.p[2] =  initial_cartesian_position.p[2]
         self.arm.move_cp(goal).wait()
         print_id('move_cp complete')
 
     # main method
     def run(self):
-        self.home()
+        # self.home()
         self.run_get()
-        self.run_servo_jp()
-        self.run_move_jp()
+        # self.run_servo_jp()
+        # self.run_move_jp()
         self.run_servo_cp()
-        self.run_move_cp()
+        # self.run_move_cp()
 
 if __name__ == '__main__':
     # ros init node so we can use default ros arguments (e.g. __ns:= for namespace)
